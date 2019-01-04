@@ -22,12 +22,12 @@ pipeline {
 					'integration': { 
 						unstash 'source'
 						withEnv(["PATH+MAVEN=${tool 'maven3'}/bin"]) {
-							sh "mvn clean package"		  
+							//sh "mvn clean package"		  
 						}		  						
 					}, 'quality': {
 						unstash 'source'
 						withEnv(["PATH+MAVEN=${tool 'maven3'}/bin"]) {
-							sh "mvn clean package"		  
+							//sh "mvn clean package"		  
 						}		  						
 					}
 				)
