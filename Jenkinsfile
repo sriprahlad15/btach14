@@ -3,7 +3,7 @@ pipeline {
 	stages {
 		stage ('build'){
 			agent {
-				label "master"
+				label "slave"
             }
 			steps {
 				git 'git@github.com:venkat09docs/btach14.git'
@@ -15,7 +15,7 @@ pipeline {
 		}
 		stage ('test') {
 			agent {
-				label "master"
+				label "slave"
             }
 			steps {
 				parallel (
@@ -35,7 +35,7 @@ pipeline {
 		}
 		stage ('approve') {
 			agent {
-				label "master"
+				label "slave"
             }
 			steps {
 				timeout(time: 7, unit: 'DAYS') {
@@ -45,7 +45,7 @@ pipeline {
 		}
 		stage ('deploy') {
 			agent {
-				label "master"
+				label "slave"
             }
 			steps {
 				unstash 'source'
