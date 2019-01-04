@@ -1,24 +1,63 @@
-node {
-   def mvnHome
-   stage('Preparation') { // for display purposes
-      // Get some code from a GitHub repository
-      git 'https://github.com/venkat09docs/btach14.git'
-      // Get the Maven tool.
-      // ** NOTE: This 'M3' Maven tool must be configured
-      // **       in the global configuration.           
-      mvnHome = tool 'maven3'
-   }
-   stage('Build') {
-      // Run the maven build
-      if (isUnix()) {
-         sh "'${mvnHome}/bin/mvn' clean package"
-      } else {
-         bat(/"${mvnHome}\bin\mvn" -Dmaven.test.failure.ignore clean package/)
-      }
-   }
-   stage('Results') {
-      junit '**/target/surefire-reports/TEST-*.xml'
-      archive 'target/*.jar'
-      fingerprint '**/*.war'
-   }
+pipeline {
+	agent none
+	stages {
+		stage ('build'){
+			agent {
+				label "master"
+            }
+			steps {
+				git 'git@github.com:venkat09docs/batch12.git'
+				withEnv(["PATH+MAVEN=${tool 'maven3'}/bin"]) {
+					sh "mvn clean package"		  
+				}
+				stash excludes: 'target/', includes: '**', name: 'source'
+			}
+		}
+		stage ('test') {
+			agent {
+				label "master"
+            }
+			steps {
+				parallel (
+					'integration': { 
+						unstash 'source'
+						withEnv(["PATH+MAVEN=${tool 'maven3'}/bin"]) {
+							sh "mvn clean package"		  
+						}		  						
+					}, 'quality': {
+						unstash 'source'
+						withEnv(["PATH+MAVEN=${tool 'maven3'}/bin"]) {
+							sh "mvn clean package"		  
+						}		  						
+					}
+				)
+			}
+		}
+		stage ('approve') {
+			agent {
+				label "master"
+            }
+			steps {
+				timeout(time: 7, unit: 'DAYS') {
+					input message: 'Do you want to deploy?', submitter: 'admin'
+				}
+			}
+		}
+		stage ('deploy') {
+			agent {
+				label "master"
+            }
+			steps {
+				unstash 'source'
+				withEnv(["PATH+MAVEN=${tool 'maven3'}/bin"]) {
+					sh "mvn clean package"		  
+				}				
+			}
+			post {
+				always {
+					archiveArtifacts '**/*.war'
+				}
+			}
+		}
+	}
 }
